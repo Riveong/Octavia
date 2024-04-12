@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "sirv-cli": "^2.0.0",
+    "svelte-select": "^5.8.3",
     "tailwindcss": "^3.4.1"
   }
 }

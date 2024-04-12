@@ -36,6 +36,7 @@
             <a href="#categories"><li><span class="icon">📁</span>Daftar Produk</li></a>
             <a href="#files"><li><span class="icon">📄</span>Daftar Nota</li></a>
             <a href="#cashier"><li><span class="icon">🖊️</span>Buat Nota</li></a>
+            <a href="#add"><li><span class="icon">🆕</span>Tambah Produk</li></a>
             <a href="#edit"><li><span class="icon">🔣</span>Edit Produk</li></a>
             <a href="{window.location.href}" target="_blank"><li><span class="icon">➕</span>New Page</li></a>
             <a href="#help"><li><span class="icon">❓</span>Help</li></a>

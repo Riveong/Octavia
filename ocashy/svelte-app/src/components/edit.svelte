@@ -26,6 +26,29 @@
         editingItem = { ...item }; // Clone the item for editing
     }
 
+    async function deleteItem(item) {
+    // Display a confirmation dialog
+    let confirmation = window.confirm('Are you sure you want to delete this item?');
+
+    if (confirmation) {
+        console.log('Yes');
+        const response = await fetch(`http://localhost:8000/items/${item.result_id}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            console.error('Failed to delete item:', response.statusText);
+            return;
+        }
+
+        console.log('Item was successfully deleted.');
+        getItems(); // Refresh the list
+
+    } else {
+        console.log('No');
+    }
+    }
+
     async function submitEdit() {
         // Prepare your edit submission here, converting item fields to your API's expected format
         const payload = {
@@ -112,6 +135,8 @@
                     <td>{item.result_kedungsari}</td>
                     <td>
                         <button on:click={() => startEditing(item)}>✏️</button>
+                        <button on:click={() => deleteItem(item)}>🚫</button>
+
                     </td>
                 {/if}
             </tr>

@@ -1,13 +1,23 @@
+from typing import List, Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import Page, add_pagination, paginate, Params
 from fastapi.responses import FileResponse
 from functions.data import *
-from pydantic import BaseModel
+from functions.pdf import *
+from pydantic import BaseModel, Field
 import os
 
 app = FastAPI()
 
+# Define the data model
+class Item(BaseModel):
+    Product: str = Field(alias='itemName')
+    Quantity: int = Field(alias='quantity')
+    Discount: int = Field(alias='discountPercentage')
+    Discounted_Amount: int = Field(alias='discountAmount')
+    Warehouse: str = Field(alias='warehouse')
+    Price: int = Field(alias='totalPrice')
 class ItemUpdate(BaseModel):
     id_barang: str
     nama: str = None
@@ -74,6 +84,49 @@ async def get_pdf(pdf_name: str):
     else:
         raise HTTPException(status_code=404, detail="File not found")
     
+@app.post("/items/{bayar}/{tipe}")
+async def make_pdf(bayar: int, items: List[Item], tipe : str):
+    # Convert each Item object to a dictionary before passing to create_pdf
+    items_dict = [item.dict() for item in items]
+    return create_pdf(bayar, items_dict, tipe)
+
+@app.post("/items/")
+async def create_item(item: ItemUpdate):
+    mydb = defineDB()
+    mycursor = mydb.cursor()
+    mycursor.execute("SELECT * FROM barang WHERE id_barang = %s", (item.id_barang,))
+    result = mycursor.fetchone()
+    if result is not None:
+        raise HTTPException(status_code=400, detail="Item with this id already exists")
+    sql = "INSERT INTO barang (id_barang, nama, hargaJual, hargaBeli, id_kategori, kulon, toko, pink, wetan, kedungsari) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    val = (item.id_barang, item.nama, item.hargaJual, item.hargaBeli, item.id_kategori, item.kulon, item.toko, item.pink, item.wetan, item.kedungsari)
+    mycursor.execute(sql, val)
+    mydb.commit()
+    mycursor.close()
+    mydb.close()
+    return {"message": f"Item {item.id_barang} was successfully created."}
+
+@app.delete("/items/{id_barang}")
+async def delete_item(id_barang: str):
+    mydb = defineDB()
+    mycursor = mydb.cursor()
+
+    # Check if the item exists
+    mycursor.execute("SELECT * FROM barang WHERE id_barang = %s", (id_barang,))
+    result = mycursor.fetchone()
+    if result is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Delete the item
+    sql = "DELETE FROM barang WHERE id_barang = %s"
+    mycursor.execute(sql, (id_barang,))
+    mydb.commit()
+
+    mycursor.close()
+    mydb.close()
+
+    return {"message": f"Item {id_barang} was successfully deleted."}
+
 @app.put("/update-item/{id_barang}")
 async def update_item(id_barang: str, item: ItemUpdate):
     current_values = get_current_values(id_barang)

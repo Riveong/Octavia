@@ -5,6 +5,7 @@
     import Cashier from '../components/cashier.svelte';
     import Help from '../components/help.svelte';
     import Edit from '../components/edit.svelte';
+    import Add from '../components/add.svelte';
 
 
     let currentRoute = '';
@@ -27,6 +28,8 @@
     <Table />
 {:else if currentRoute === '#files'}
     <PdfTable />
+{:else if currentRoute === '#add'}
+    <Add />
 {:else if currentRoute === '#cashier'}
     <Cashier />
 {:else if currentRoute === '#edit'}
