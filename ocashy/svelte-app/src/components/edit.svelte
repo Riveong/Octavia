@@ -2,23 +2,30 @@
     import { onMount } from 'svelte';
     let items = [];
     let filteredItems = [];
-    let searchTerm = '';
+    let page = 1;
+    let maxPage;
+    let search;
+
     let editingItemId = null; // ID of the item currently being edited
     let editingItem = {}; // Object to hold the editing item's data for binding to form inputs
 
+
+
     async function getItems() {
-        const response = await fetch('http://localhost:8000/barang');
+        const response = await fetch(`http://localhost:8000/search?page=${page}&limit=17`);
         const data = await response.json();
         items = data.Items;
+        maxPage = data.TotalPages;
         filteredItems = items;
     }
 
-    function filterItems() {
-        filteredItems = items.filter((item) => {
-            return item.result_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                   item.result_id.toString().includes(searchTerm) ||
-                   item.result_categories.toLowerCase().includes(searchTerm.toLowerCase());
-        });
+    async function getSearch(){
+        const search = document.getElementById('search').value;
+        const response = await fetch(`http://localhost:8000/search?name=${search}&page=${page}&limit=17`);
+        const data = await response.json();
+        items = data.Items;
+        filteredItems = items;
+        maxPage = data.TotalPages
     }
 
     function startEditing(item) {
@@ -78,14 +85,17 @@
         }
     }
 
-    $: searchTerm, filterItems(); // Reactively filter items on searchTerm change
     onMount(() => {
         getItems();
     });
 </script>
 
 <h1>Edit Data</h1>
-<input type="text" placeholder="Search..." bind:value={searchTerm} class="search-bar" />
+<input type="text" id = "search" placeholder="Search..."/>
+<button on:click={() => {
+    page = 1;
+    getSearch();
+    }}> Search</button>
 
 
 <div class = "scrollable-body">
@@ -106,6 +116,7 @@
         </tr>
     </thead>
     <tbody>
+
         {#each filteredItems as item (item.result_id)}
             <tr>
                 <td>{item.result_id}</td>
@@ -144,8 +155,31 @@
     </tbody>
 </table>
 </div>
+<button on:click={() => {
+    page = page - 1;
+    if (page===0){
+        page = maxPage;
+        getSearch()
+    }else{
+        getSearch()
+    }
+
+}}>Prev</button>
+<button on:click={() => {
+    page = page + 1;
+    if (page>maxPage){
+        page = 1;
+        getSearch()
+    }else{
+        getSearch()
+    }
+
+}}>Next</button>
+<p>Total Halaman: {maxPage}</p>
+<p>Halaman Saat ini: {page}</p>
 
 <style>
+    
     .search-bar {
         width: 100%;
         padding: 10px;

@@ -4,25 +4,40 @@
 
   let items = []; // Holds fetched items
   let currentPage = 1; // Pagination: current page
-  const itemsPerPage = 6; // Pagination: items per page
+  const itemsPerPage = 99; // Pagination: items per page
   let search = ''; // Search query
+  let page = 1;
+  let maxPage;
   let discountType = 'percent';
+  let show = false;
+  let notShow = true;
+
+
+  function hide() {
+	show = !show;
+  notShow = !notShow;
+  }
   
 
   // Fetch items from the backend
   async function getItems() {
-    const response = await fetch('http://localhost:8000/barang');
+    const response = await fetch(`http://localhost:8000/search?page=${page}&limit=8`);
     const data = await response.json();
     items = data.Items;
+    maxPage = data.TotalPages;
   }
-
+  
+  async function getSearch(){
+        const search = document.getElementById('search').value;
+        const response = await fetch(`http://localhost:8000/search?name=${search}&page=${page}&limit=8`);
+        const data = await response.json();
+        items = data.Items;
+        filteredItems = items;
+        maxPage = data.TotalPages;
+    }
   // Call getItems when the component mounts
   onMount(getItems);
 
-  // Change current page for pagination
-  function changePage(page) {
-    currentPage = page;
-  }
 
   // Filtered items based on search query
   $: filteredItems = items.filter(item => 
@@ -71,7 +86,8 @@ function handleTransfer(event) {
     const itemName = document.getElementById('transferName').value;
     const quantity = document.getElementById('transferQuantity').value;
     const hargaSatuan = document.getElementById('hargaSatuan').value; // Ensure this ID is unique and corrected in your form
-    const warehouse = document.getElementById('warehouseSelect').value;
+    const warehouse1 = document.getElementById('warehouseSelect').value;
+    const warehouse = warehouse1.replace(/:\s*\d+$/, '');
     if (discountType==='percent'){
       const discountPercentage = document.getElementById('discountPercentage').value;
       addRowToTable(itemName, hargaSatuan, quantity, warehouse,null,discountPercentage);
@@ -239,10 +255,16 @@ function updateTotalSum() {
 </script>
 <h3>Daftar Barang</h3>
 <!-- Search input -->
-<input type="text" bind:value={search} placeholder="Search...">
+<input type="text" id = "search" placeholder="Search...">
+<button on:click={() => {
+  page = 1;
+  getSearch();
+  }}> Search</button>
+
+  <button class:show on:click={() => {hide()}}> ➖ Tutup Table</button>
+  <button class:notShow on:click={() => {hide()}}>➕ Buka Table</button>
 
 
-<!-- Display of items with pagination -->
 <table>
   <thead>
     <tr>
@@ -252,7 +274,7 @@ function updateTotalSum() {
       <th>Action</th>
     </tr>
   </thead>
-  <tbody>
+  <tbody class:show>
     {#each paginatedItems as item (item.result_id)}
       <tr>
         <td>{item.result_name}</td>
@@ -264,17 +286,28 @@ function updateTotalSum() {
     {/each}
   </tbody>
 </table>
+<p>Halaman Saat ini: {page}</p>
+<p>Total Halaman: {maxPage}</p>
+<button on:click={() => {
+  page = page - 1;
+  if (page===0){
+      page = maxPage;
+      getSearch()
+  }else{
+      getSearch()
+  }
 
-<!-- Pagination navigation -->
-<nav>
-  <ul>
-    {#each Array(Math.ceil(filteredItems.length / itemsPerPage)) as _, i}
-      <li>
-        <button on:click={() => changePage(i + 1)}>{i + 1}</button>
-      </li>
-    {/each}
-  </ul>
-</nav>
+}}>Prev</button>
+<button on:click={() => {
+  page = page + 1;
+  if (page>maxPage){
+      page = 1;
+      getSearch()
+  }else{
+      getSearch()
+  }
+
+}}>Next</button>
 
 <h3>Selected Item</h3>
 <form id="transferForm" class="form-container" on:submit|preventDefault={handleTransfer}>
@@ -292,7 +325,7 @@ function updateTotalSum() {
   </div>
   
   <div>
-    <label for="transferQuantity">Quantity:</label>
+    <label for="transferQuantity">Jumlah:</label>
     <input id="transferQuantity" type="number" name="quantity" min="1" required/>
   </div>
   <div>
@@ -362,6 +395,12 @@ function updateTotalSum() {
 
 
 <style>
+  .show{
+        display: none;
+    }
+    .notShow{
+        display: none;
+    }
   ul {
     list-style-type: none;
     margin: 0;

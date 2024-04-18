@@ -20,7 +20,7 @@ def create_pdf(bayar,data_list,tipe):
     sample_style_sheet['Heading1'].leading = 6
     sample_style_sheet['BodyText'].leading = 6
     sample_style_sheet['Heading1'].fontSize = 10
-    sample_style_sheet['BodyText'].fontSize = 7
+    sample_style_sheet['BodyText'].fontSize = 10
     
     # Get current date and time
     now = datetime.datetime.now()
@@ -33,7 +33,7 @@ def create_pdf(bayar,data_list,tipe):
 
 
     # Define table header
-    table_header = ['No','Produk', 'Kuantitas', 'Diskon', 'Harga Diskon', 'Gudang', 'Harga']
+    table_header = ['No','Produk', 'QTY', 'Diskon', 'Harga Diskon', 'Gudang', 'Harga']
 
     # Split data into chunks of 10
     # chunks = [data_list[i:i + 8] for i in range(0, len(data_list), 8)]
@@ -46,15 +46,15 @@ def create_pdf(bayar,data_list,tipe):
     paragraph_0 = Paragraph(f"Nota Penjualan {tipe}", sample_style_sheet['BodyText'])
     paragraph_1 = Paragraph("Istana Keramik", sample_style_sheet['Heading1'])
     paragraph_2 = Paragraph("Jl. WR Supratman No.24, Baledono, Kec. Purworejo, Kabupaten Purworejo, Jawa Tengah 54118", sample_style_sheet['BodyText'])
-    paragraph_3 = Paragraph("Telp   :   (0275) 321 597 | WhatsApp   :   087714141252", sample_style_sheet['BodyText'])
+    paragraph_3 = Paragraph("Telp   :   (0275) 321 597 | WhatsApp   :   087714141252 | Instagram    :   @istanakeramik_pwr", sample_style_sheet['BodyText'])
     paragraph_4 = Paragraph("Website    :   https://istanakeramik.com", sample_style_sheet['BodyText'])
     paragraph_6 = Paragraph(f"Nomor Faktur : {fktrname}     Waktu :    {waktu}", sample_style_sheet['BodyText'])
     paragraph_footer = Paragraph("*Mohon barang di periksa dulu sebelum meninggalkan toko.",sample_style_sheet['Italic'])
     paragraph_footer2 = Paragraph("**Barang yang sudah dibeli tidak dapat ditukar kembali",sample_style_sheet['Italic'])
     catatan =  Paragraph("CATATAN TAMBAHAN :",sample_style_sheet['Italic'])
     
-    elements.append(paragraph_0) 
-    elements.append(paragraph_1)
+    elements.append(paragraph_1) 
+    elements.append(paragraph_0)
     elements.append(paragraph_2)
     elements.append(paragraph_3)
     elements.append(paragraph_4)

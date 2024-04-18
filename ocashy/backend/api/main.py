@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import Page, add_pagination, paginate, Params
 from fastapi.responses import FileResponse
@@ -29,6 +29,38 @@ class ItemUpdate(BaseModel):
     pink: int = None
     wetan: int = None
     kedungsari: int = None
+    
+def get_items2(page: int, limit: int):
+    mydb = defineDB()
+    mycursor = mydb.cursor()
+
+    # Count total items
+    mycursor.execute("SELECT COUNT(*) FROM barang")
+    total_count = mycursor.fetchone()[0]
+
+    # Fetch items with pagination
+    offset = (page - 1) * limit
+    mycursor.execute("SELECT * FROM barang LIMIT %s OFFSET %s", (limit, offset))
+    myresult = mycursor.fetchall()
+    mycursor.close()
+    close_db_connection(mydb, "all_barang")
+    item_list = []
+    for x in myresult:
+        items = {
+            'result_id': x[0],
+            'result_name': x[1],
+            'result_price': x[2],
+            'result_buy_price': x[3],
+            'result_categories': x[4],
+            'result_kulon': x[5],
+            'result_toko': x[6],
+            'result_pink': x[7],
+            'result_wetan': x[8],
+            'result_kedungsari': x[9],
+            'result_stock': x[5] + x[6] + x[7] + x[8] + x[9]
+        }
+        item_list.append(items)
+    return item_list, total_count
     
 def get_current_values(id_barang):
     mydb = defineDB()
@@ -67,6 +99,72 @@ def GETitems():
         }
     except:
         raise HTTPException(status_code=533, detail="Error on server side")
+
+def search_by_name(name: str, page: int, limit: int):
+    mydb = defineDB()
+    mycursor = mydb.cursor()
+
+    # Escaping the % for SQL LIKE and adding it for search pattern
+    search_pattern = f"%{name}%"
+
+    # Count total items that match the search pattern
+    mycursor.execute("SELECT COUNT(*) FROM barang WHERE LOWER(Nama) LIKE LOWER(%s)", (search_pattern,))
+    total_count = mycursor.fetchone()[0]
+
+    # Fetch items with pagination and search filter
+    offset = (page - 1) * limit
+    mycursor.execute("SELECT * FROM barang WHERE LOWER(Nama) LIKE LOWER(%s) LIMIT %s OFFSET %s", 
+                     (search_pattern, limit, offset))
+    myresult = mycursor.fetchall()
+    mycursor.close()
+    close_db_connection(mydb, "search_barang")
+    item_list = []
+    for x in myresult:
+        items = {
+            'result_id': x[0],
+            'result_name': x[1],
+            'result_price': x[2],
+            'result_buy_price': x[3],
+            'result_categories': x[4],
+            'result_kulon': x[5],
+            'result_toko': x[6],
+            'result_pink': x[7],
+            'result_wetan': x[8],
+            'result_kedungsari': x[9],
+            'result_stock': x[5] + x[6] + x[7] + x[8] + x[9]
+        }
+        item_list.append(items)
+    return item_list, total_count
+    
+@app.get("/search")
+def search_items(name: str = '', page: int = Query(default=1, ge=1), limit: int = Query(default=10, ge=1)):
+    try:
+        items, total_count = search_by_name(name, page, limit)
+        total_pages = (total_count + limit - 1) // limit
+        return {
+            "Status": "OK",
+            "TotalPages": total_pages,
+            "CurrentPage": page,
+            "ItemsPerPage": limit,
+            "Items": items
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/barang/limit")
+def GETitems(page: int = Query(default=1, ge=1), limit: int = Query(default=10, ge=1)):
+    try:
+        items, total_count = get_items2(page, limit)
+        total_pages = (total_count + limit - 1) // limit  # calculate the number of total pages
+        return {
+            "Status": "OK",
+            "TotalPages": total_pages,
+            "CurrentPage": page,
+            "ItemsPerPage": limit,
+            "Items": items
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/pdfs")
 async def list_pdfs():

@@ -1,33 +1,42 @@
 <script>
+    import { onMount } from "svelte";
+
     let items = [];
     let filteredItems = [];
-    let searchTerm = '';
+    let page = 1;
+    let maxPage;
+
+
 
     async function getItems() {
-        const response = await fetch('http://localhost:8000/barang');
+        const response = await fetch(`http://localhost:8000/search?page=${page}&limit=17`);
         const data = await response.json();
         items = data.Items;
         filteredItems = items;
+        maxPage = data.TotalPages
     }
 
-    function filterItems() {
-        filteredItems = items.filter((item) => {
-            // Assuming `item` has properties you are searching in.
-            // Adjust the properties you want to search by.
-            return item.result_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                   item.result_id.toString().includes(searchTerm) ||
-                   item.result_categories.toLowerCase().includes(searchTerm.toLowerCase());
-        });
+
+    async function getSearch(){
+        const search = document.getElementById('search').value;
+        const response = await fetch(`http://localhost:8000/search?name=${search}&page=${page}&limit=17`);
+        const data = await response.json();
+        items = data.Items;
+        filteredItems = items;
+        maxPage = data.TotalPages
+
     }
 
-    $: searchTerm, filterItems(); // Reactive statement to filter items when searchTerm changes
+    onMount(getItems)
 
-    getItems();
 </script>
 <h1>Daftar Produk</h1>
 
-<input type="text" placeholder="Search..." bind:value={searchTerm} />
-
+<input type="text" id = "search" placeholder="Search..."/>
+<button on:click={() => {
+    page = 1;
+    getSearch();
+    }}> Search</button>
 <table>
     <thead>
         <tr>
@@ -62,6 +71,28 @@
         {/each}
     </tbody>
 </table>
+<button on:click={() => {
+    page = page - 1;
+    if (page===0){
+        page = maxPage;
+        getSearch()
+    }else{
+        getSearch()
+    }
+
+}}>Prev</button>
+<button on:click={() => {
+    page = page + 1;
+    if (page>maxPage){
+        page = 1;
+        getSearch()
+    }else{
+        getSearch()
+    }
+
+}}>Next</button>
+<p>Total Halaman: {maxPage}</p>
+<p>Halaman Saat ini: {page}</p>
 
 <style>
     input[type="text"] {
