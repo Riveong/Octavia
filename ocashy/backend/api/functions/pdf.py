@@ -22,6 +22,15 @@ def create_pdf(bayar,data_list,tipe):
     sample_style_sheet['Heading1'].fontSize = 10
     sample_style_sheet['BodyText'].fontSize = 10
     
+
+    
+    #formatting
+    for item in data_list:
+        item["Price"] = f"{item['Price']:,}".replace(",", ".")
+        item["Discounted_Amount"] = f"{item['Discounted_Amount']:,}".replace(",", ".")
+        item["Satuan_Harga"] = f"{item['Satuan_Harga']:,}".replace(",", ".")
+        
+
     # Get current date and time
     now = datetime.datetime.now()
     fktrname = now.strftime("%d-%m-%Y-%H,%M,%S")
@@ -33,7 +42,7 @@ def create_pdf(bayar,data_list,tipe):
 
 
     # Define table header
-    table_header = ['No','Produk', 'QTY', 'Diskon', 'Harga Diskon', 'Gudang', 'Harga']
+    table_header = ['No','Produk','Satuan Harga', 'QTY', 'Diskon Satuan', 'Diskon Total', 'Gudang', 'Harga']
 
     # Split data into chunks of 10
     # chunks = [data_list[i:i + 8] for i in range(0, len(data_list), 8)]
@@ -61,7 +70,7 @@ def create_pdf(bayar,data_list,tipe):
     elements.append(paragraph_6)
     elements.append(Spacer(0, 20))
     
-    char_limit = 40
+    char_limit = 35
     
     for chunk_index, chunk in enumerate(chunks):
     # Convert dictionaries to lists, add numbering and table header
@@ -76,9 +85,13 @@ def create_pdf(bayar,data_list,tipe):
             data.append([total_items + i + 1] + item_values)
         total_items += len(chunk)  # Update total items processed
         if chunk_index == len(chunks) - 1:
-            data.append(['', '', '', '', '', 'Total', total_harga])
-            data.append(['', '', '', '', '', 'Bayar', bayar])
-            data.append(['', '', '', '', '', 'Kembalian', kembalian])
+            data.append(['', '', '', '', '','', 'Total', f"{total_harga:,.0f}".replace(",", ".")])
+            data.append(['', '', '', '', '','', 'Bayar', f"{bayar:,.0f}".replace(",", ".")])
+            if kembalian > 0:
+                data.append(['', '', '', '', '','', 'Kembalian', f"{kembalian:,.0f}".replace(",", ".")])
+            else:
+                data.append(['', '', '', '', '','', 'Kurang', f"{kembalian:,.0f}".replace(",", ".")])
+
         
 
         # Create table
@@ -89,7 +102,7 @@ def create_pdf(bayar,data_list,tipe):
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('TOPMARGIN', (0, 0), (-1, 0), 0),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 0),
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),

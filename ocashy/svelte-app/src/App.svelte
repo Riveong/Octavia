@@ -20,7 +20,7 @@
 </script>
 
 <div class="navbar">
-    <p style="color : #fff">[Your-Company-Name] | Ocashy app Beta 0.1 | Status: 
+    <p style="color : #fff">Istana Keramik | Ocashy app v1 | Status: 
         {#if online}
             <b style="color: #85ffa7;">Online</b>
         {:else}

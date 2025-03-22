@@ -174,7 +174,8 @@ function submitNota() {
     const rowData = {
       itemName: row.cells[0].textContent,
       quantity: parseInt(row.cells[1].textContent),
-      discountPercentage: parseInt(row.cells[2].textContent.slice(0, -1)),
+      discountPercentage: 0,
+      //discountPercentage: parseInt(row.cells[2].textContent.slice(0, -1)),
       discountAmount: parseInt(row.cells[3].textContent),
       totalPrice: row.cells[4].textContent,
       warehouse: row.cells[5].textContent

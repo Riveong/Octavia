@@ -13,6 +13,7 @@ app = FastAPI()
 # Define the data model
 class Item(BaseModel):
     Product: str = Field(alias='itemName')
+    Satuan_Harga: int = Field(alias='satuanHarga')
     Quantity: int = Field(alias='quantity')
     Discount: int = Field(alias='discountPercentage')
     Discounted_Amount: int = Field(alias='discountAmount')

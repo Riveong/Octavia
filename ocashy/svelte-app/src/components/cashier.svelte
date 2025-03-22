@@ -109,37 +109,49 @@ function addRowToTable(itemName, hargaSatuan, quantity = 1, warehouse, discountA
 
   // Cells for item information
   const cell1 = newRow.insertCell(0);
-  const cell2 = newRow.insertCell(1);
-  const cell3 = newRow.insertCell(2);
+  const satuc = newRow.insertCell(1);
+  const cell2 = newRow.insertCell(2);
   const cell4 = newRow.insertCell(3);
   const cell5 = newRow.insertCell(4);
   const cell6 = newRow.insertCell(5);
   // Cell for delete button
   const cell7 = newRow.insertCell(6);
+  const cell8 = newRow.insertCell(7);
+ 
 
-
-
+  //a123
   //hitung diskon + total harga  
-  const totalHarga = quantity * hargaSatuan
-  let persen = discountPercentage
-  let amount = discountAmount
+  const totalHarga = quantity * hargaSatuan;
+  let persen = discountPercentage;
+  let amount = discountAmount;
+  let finalHarga;
+  let todis;
 
-  if (persen === null){
-    persen = (discountAmount / totalHarga) * 100;
+  if (persen===null && amount === null){
+    todis = 0;
+    finalHarga = totalHarga;
   }
-  if (amount === null){
-    amount = (totalHarga * discountPercentage) / 100;
+  else if (persen===null){
+    todis = amount * quantity
+    finalHarga = totalHarga - todis;
   }
-  const finalHarga = totalHarga - amount;
+  else if (amount===null){
+    todis = totalHarga * (persen/100);
+    amount = (totalHarga * (persen/100)) * quantity;
+    finalHarga = totalHarga - todis;
+  }
+  
+
 
 
 
   cell1.textContent = itemName;
+  satuc.textContent = hargaSatuan;
   cell2.textContent = quantity;
-  cell3.textContent = persen+'%';
   cell4.textContent = amount;
-  cell5.textContent = finalHarga;
-  cell6.textContent = warehouse;
+  cell5.textContent = todis;
+  cell6.textContent = finalHarga;
+  cell7.textContent = warehouse;
   
 
   // Create a delete button
@@ -149,7 +161,7 @@ function addRowToTable(itemName, hargaSatuan, quantity = 1, warehouse, discountA
     // Call the deleteRow function and pass the current row to be deleted
     deleteRow(newRow);
   };
-  cell7.appendChild(deleteBtn);
+  cell8.appendChild(deleteBtn);
 
   updateTotalSum()
 }
@@ -189,11 +201,13 @@ function submitNota() {
     // Assuming the order of cells is: Item Name, Quantity, Diskon (%), Diskon (#), Harga total, Warehouse
     const rowData = {
       itemName: row.cells[0].textContent,
-      quantity: parseInt(row.cells[1].textContent),
-      discountPercentage: parseInt(row.cells[2].textContent.slice(0, -1)),
-      discountAmount: parseInt(row.cells[3].textContent),
-      totalPrice: row.cells[4].textContent,
-      warehouse: row.cells[5].textContent
+      satuanHarga: row.cells[1].textContent,
+      quantity: parseInt(row.cells[2].textContent),
+      discountPercentage: 0,
+      //discountPercentage: parseInt(row.cells[2].textContent.slice(0, -1)),
+      discountAmount: parseInt(row.cells[4].textContent),
+      totalPrice: row.cells[5].textContent,
+      warehouse: row.cells[6].textContent
     };
 
     notaData.push(rowData);
@@ -237,7 +251,7 @@ function updateTotalSum() {
   let totalSum = 0;
 
   for (let row of tableBody.rows) {
-    const hargaTotalCellText = row.cells[4].textContent; // Assuming the 'Harga total' is in the fifth column
+    const hargaTotalCellText = row.cells[5].textContent; // Assuming the 'Harga total' is in the fifth column
     const hargaTotal = parseFloat(hargaTotalCellText.replace(/[^0-9.-]+/g, "")); // Remove any non-numeric characters, if any
 
     if (!isNaN(hargaTotal)) {
@@ -341,7 +355,7 @@ function updateTotalSum() {
   {#if discountType === 'percent'}
   <div>
     <label for="discountPercentage">Discount Percentage:</label>
-    <input id="discountPercentage" type="number" name="discountPercentage" min="0" max="100" value="0" />
+    <input id="discountPercentage" type="number" name="discountPercentage"step=any min="0" max="100" value="0" />
   </div>
 {/if}
 
@@ -349,7 +363,7 @@ function updateTotalSum() {
 {#if discountType === 'amount'}
   <div>
     <label for="discountAmount">Discount Amount:</label>
-    <input id="discountAmount" type="number" name="discountAmount" min="0" value="0"/>
+    <input id="discountAmount" type="number" name="discountAmount" min="0" value="0" />
   </div>
 {/if}
   
@@ -366,9 +380,10 @@ function updateTotalSum() {
   <thead>
     <tr>
       <th>Item Name</th>
+      <th>Harga Satuan</th>
       <th>Quantity</th>
-      <th>Diskon (%)</th>
-      <th>Diskon (#)</th>
+      <th>Diskon Satuan</th>
+      <th>Total Diskon</th>
       <th>Harga total</th>
       <th>Warehouse</th>
       <th>Action</th>
