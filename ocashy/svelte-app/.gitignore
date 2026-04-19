@@ -2,3 +2,7 @@
 /public/build/
 
 .DS_Store
+/ocashy/receipts
+receipts
+receipts/
+*.pdf
