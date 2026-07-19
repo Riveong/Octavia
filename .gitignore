@@ -1,0 +1,42 @@
+# Node.js dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Neutralino runtimes and outputs
+bin/
+resources.neu
+*.neu
+
+# Python cache & virtualenvs
+__pycache__/
+*.pyc
+.venv/
+venv/
+Pipfile.lock
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# App receipts/caches
+receipts/
+ocashy/receipts/
+
+# Local settings and secrets
+*.local
+.env
+.env.*
+
+# IDE / System files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+Thumbs.db
+.DS_Store

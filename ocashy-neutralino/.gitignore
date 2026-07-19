@@ -1,0 +1,8 @@
+node_modules/
+dist/
+bin/
+resources.neu
+*.neu
+*.local
+.env
+.env.*
