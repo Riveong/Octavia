@@ -10,6 +10,13 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.utils import ImageReader
 import datetime
 
+# Setup absolute directories
+FUNCTIONS_DIR = os.path.dirname(os.path.abspath(__file__))
+API_DIR = os.path.dirname(FUNCTIONS_DIR)
+BACKEND_DIR = os.path.dirname(API_DIR)
+OCASHY_DIR = os.path.dirname(BACKEND_DIR)
+RECEIPTS_DIR = os.path.join(OCASHY_DIR, "receipts")
+WATERMARK_PATH = os.path.join(OCASHY_DIR, "test.png")
 
 def create_pdf(bayar,data_list,tipe):
     total_harga = sum(item['Price'] for item in data_list)
@@ -37,7 +44,9 @@ def create_pdf(bayar,data_list,tipe):
     waktu = now.strftime('%d-%m-%Y:%H-%M-%S')
     filename = now.strftime("%d-%m-%Y-%H,%M,%S") + ".pdf"
 
-    pdf = SimpleDocTemplate('../../../ocashy/receipts/'+filename, pagesize=landscape(A5), topMargin = 5, leftMargin = 10, rightMargin = 10, bottomMargin = 0)
+    os.makedirs(RECEIPTS_DIR, exist_ok=True)
+    pdf_file_path = os.path.join(RECEIPTS_DIR, filename)
+    pdf = SimpleDocTemplate(pdf_file_path, pagesize=landscape(A5), topMargin = 5, leftMargin = 10, rightMargin = 10, bottomMargin = 0)
     elements = []
 
 
@@ -76,12 +85,20 @@ def create_pdf(bayar,data_list,tipe):
     # Convert dictionaries to lists, add numbering and table header
         data = [table_header]
         for i, item in enumerate(chunk):
-            item_values = list(item.values())
+            product_name = item.get('Product', '')
+            satuan_harga = item.get('Satuan_Harga', 0)
+            quantity = item.get('Quantity', 0)
+            discount = item.get('Discount', 0)
+            discounted_amount = item.get('Discounted_Amount', 0)
+            warehouse = item.get('Warehouse', '')
+            price = item.get('Price', 0)
         
-        # Check if product name exceeds the character limit
-            if len(item_values[0]) > char_limit:
+            # Check if product name exceeds the character limit
+            if len(product_name) > char_limit:
                 # Split the product name
-                item_values[0] = item_values[0][:char_limit] + '\n' + item_values[0][char_limit:]
+                product_name = product_name[:char_limit] + '\n' + product_name[char_limit:]
+            
+            item_values = [product_name, satuan_harga, quantity, discount, discounted_amount, warehouse, price]
             data.append([total_items + i + 1] + item_values)
         total_items += len(chunk)  # Update total items processed
         if chunk_index == len(chunks) - 1:
@@ -121,7 +138,7 @@ def create_pdf(bayar,data_list,tipe):
             elements.append(catatan)
         
     pdf.build(elements)
-    add_watermark_to_pdf('../../../ocashy/receipts/'+filename, '../../../ocashy/test.png')
+    add_watermark_to_pdf(pdf_file_path, WATERMARK_PATH)
     return {"response":f"http://localhost:8000/pdfs/{filename}"}
 
 

@@ -4,12 +4,10 @@
     let filteredItems = [];
     let page = 1;
     let maxPage;
-    let search;
+    let searchQuery = '';
 
     let editingItemId = null; // ID of the item currently being edited
     let editingItem = {}; // Object to hold the editing item's data for binding to form inputs
-
-
 
     async function getItems() {
         const response = await fetch(`http://localhost:8000/search?page=${page}&limit=17`);
@@ -20,8 +18,7 @@
     }
 
     async function getSearch(){
-        const search = document.getElementById('search').value;
-        const response = await fetch(`http://localhost:8000/search?name=${search}&page=${page}&limit=17`);
+        const response = await fetch(`http://localhost:8000/search?name=${searchQuery}&page=${page}&limit=17`);
         const data = await response.json();
         items = data.Items;
         filteredItems = items;
@@ -91,7 +88,7 @@
 </script>
 
 <h1>Edit Data</h1>
-<input type="text" id = "search" placeholder="Search..."/>
+<input class="search-bar" type="text" placeholder="Search..." bind:value={searchQuery}/>
 <button on:click={() => {
     page = 1;
     getSearch();
