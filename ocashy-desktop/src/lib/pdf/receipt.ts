@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { mkdir, writeFile, exists } from "@tauri-apps/plugin-fs";
 import { BaseDirectory, appDataDir, join } from "@tauri-apps/api/path";
 import { openPath } from "@tauri-apps/plugin-opener";
+import { invoke } from "@tauri-apps/api/core";
 import type { NotaLengkap } from "../services/nota";
 import type { PrintSettings } from "../services/settings";
 import { angka, tanggal } from "../utils/format";
@@ -117,8 +118,8 @@ function buildDoc(data: NotaLengkap, s: PrintSettings): jsPDF {
 
 /**
  * Buat PDF nota sesuai properti print tersimpan, simpan ke
- * %APPDATA%/<app>/receipts/, lalu (opsional) buka dengan viewer default.
- * Ukuran kertas & orientasi dibakar ke PDF — tidak tergantung setting browser.
+ * %APPDATA%/<app>/receipts/, lalu (opsional) buka dengan viewer default
+ * atau cetak langsung menggunakan SumatraPDF.
  */
 export async function cetakNota(data: NotaLengkap, s: PrintSettings): Promise<string> {
   const doc = buildDoc(data, s);
@@ -133,6 +134,19 @@ export async function cetakNota(data: NotaLengkap, s: PrintSettings): Promise<st
   await writeFile(rel, bytes, { baseDir: BaseDirectory.AppData });
 
   const fullPath = await join(await appDataDir(), dir, fileName);
+
+  if (s.silentPrint) {
+    try {
+      await invoke("print_pdf_via_sumatra", {
+        pdfPath: fullPath,
+        printerName: s.printerName || null,
+        sumatraPath: s.sumatraPath || null,
+      });
+    } catch (e) {
+      throw new Error(`Direct print failed: ${e}`);
+    }
+  }
+
   if (s.autoOpen) {
     await openPath(fullPath);
   }

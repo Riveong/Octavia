@@ -6,8 +6,10 @@ from fastapi.responses import FileResponse
 from functions.data import *
 from functions.pdf import *
 from pydantic import BaseModel, Field
-import os
-import mysql.connector
+try:
+    import mysql.connector
+except ImportError:
+    mysql = None
 
 app = FastAPI()
 
@@ -302,7 +304,7 @@ async def update_item(id_barang: str, item: ItemUpdate):
             id_barang
         ))
         mydb.commit()
-    except mysql.connector.Error as error:
+    except Exception as error:
         if mydb is not None:
             mydb.rollback()  # Rollback in case of any error
         raise HTTPException(status_code=500, detail=f"Database update failed: {error}")

@@ -13,6 +13,9 @@ export interface PrintSettings {
   orientation: "portrait" | "landscape";
   marginMm: number;
   autoOpen: boolean; // buka PDF otomatis setelah dicetak
+  silentPrint: boolean; // cetak langsung tanpa print dialog (via SumatraPDF)
+  printerName: string; // nama printer untuk silent print (optional)
+  sumatraPath: string; // lokasi SumatraPDF.exe (optional)
   namaToko: string;
   alamat: string;
   kontak: string;
@@ -26,6 +29,9 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   orientation: "landscape",
   marginMm: 8,
   autoOpen: true,
+  silentPrint: false,
+  printerName: "",
+  sumatraPath: "SumatraPDF.exe",
   namaToko: "Istana Keramik",
   alamat:
     "Jl. WR Supratman No.24, Baledono, Kec. Purworejo, Kabupaten Purworejo, Jawa Tengah 54118",

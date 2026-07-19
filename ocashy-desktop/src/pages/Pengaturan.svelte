@@ -115,6 +115,22 @@
             Buka PDF otomatis setelah cetak
           </label>
         </div>
+        <div class="check">
+          <label for="silentprint">
+            <input id="silentprint" type="checkbox" bind:checked={s.silentPrint} />
+            Cetak langsung (Silent Print)
+          </label>
+        </div>
+        {#if s.silentPrint}
+          <div class="wide">
+            <label for="sumatra">Lokasi/Command SumatraPDF.exe</label>
+            <input id="sumatra" placeholder="SumatraPDF.exe" bind:value={s.sumatraPath} />
+          </div>
+          <div>
+            <label for="printer">Nama Printer (kosong = default)</label>
+            <input id="printer" placeholder="Contoh: POS-80" bind:value={s.printerName} />
+          </div>
+        {/if}
       </div>
 
       <h3 class="sub">Kop Nota</h3>
