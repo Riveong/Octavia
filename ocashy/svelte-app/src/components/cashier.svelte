@@ -1,376 +1,288 @@
 <script>
   import { onMount } from 'svelte';
-  import { writable } from 'svelte/store';
 
-  let items = []; // Holds fetched items
-  let currentPage = 1; // Pagination: current page
-  const itemsPerPage = 99; // Pagination: items per page
-  let search = ''; // Search query
+  let items = []; // Product list fetched from backend
   let page = 1;
-  let maxPage;
-  let discountType = 'percent';
-  let show = false;
-  let notShow = true;
+  let maxPage = 1;
+  let searchQuery = '';
+  let isTableOpen = true;
 
+  // Selected item form values
+  let selectedId = '';
+  let selectedName = '';
+  let selectedPrice = 0;
+  let quantity = 1;
+  let discountType = 'percent'; // 'percent' or 'amount'
+  let discountPercentage = 0;
+  let discountAmount = 0;
+  let availableWarehouses = []; // { name, stock }
+  let selectedWarehouse = '';
 
-  function hide() {
-	show = !show;
-  notShow = !notShow;
-  }
-  
+  // Order cart (list of added items)
+  let orderCart = [];
+  let tipePembeli = 'Umum';
+  let nominalUang = 0;
 
-  // Fetch items from the backend
+  // Fetch initial items
   async function getItems() {
-    const response = await fetch(`http://localhost:8000/search?page=${page}&limit=8`);
-    const data = await response.json();
-    items = data.Items;
-    maxPage = data.TotalPages;
-  }
-  
-  async function getSearch(){
-        const search = document.getElementById('search').value;
-        const response = await fetch(`http://localhost:8000/search?name=${search}&page=${page}&limit=8`);
-        const data = await response.json();
-        items = data.Items;
-        filteredItems = items;
-        maxPage = data.TotalPages;
+    try {
+      const response = await fetch(`http://localhost:8000/search?page=${page}&limit=8`);
+      const data = await response.json();
+      items = data.Items || [];
+      maxPage = data.TotalPages || 1;
+    } catch (e) {
+      console.error("Failed to fetch items:", e);
     }
-  // Call getItems when the component mounts
+  }
+
+  // Fetch search results
+  async function getSearch() {
+    try {
+      const response = await fetch(`http://localhost:8000/search?name=${searchQuery}&page=${page}&limit=8`);
+      const data = await response.json();
+      items = data.Items || [];
+      maxPage = data.TotalPages || 1;
+    } catch (e) {
+      console.error("Failed to search items:", e);
+    }
+  }
+
   onMount(getItems);
 
-
-  // Filtered items based on search query
-  $: filteredItems = items.filter(item => 
-    item.result_name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  // Paginated items based on current page
-  $: paginatedItems = filteredItems.slice(
-    (currentPage - 1) * itemsPerPage, 
-    currentPage * itemsPerPage
-  );
-
-
-  function transferData(id, name, price, kulon, toko, pink, wetan, kedungsari) {
-  // Assuming you have the form elements selected or use bind:this in Svelte
-  const idInput = document.getElementById('transferId');
-  const nameInput = document.getElementById('transferName');
-  const warehouseSelect = document.getElementById('warehouseSelect');
-  const hargaSatu = document.getElementById('hargaSatuan');
-
-  // Set the value of the form inputs
-  idInput.value = id;
-  nameInput.value = name;
-  hargaSatu.value = price;
-
-  // Clear existing options in the select box
-  warehouseSelect.innerHTML = '';
-
-  // Array of warehouse names
-  const warehouses = ['kulon: '+kulon, 'toko: '+toko,'pink: '+ pink,'wetan: '+ wetan,'kedungsari: '+ kedungsari];
-
-  // Populate the select box with warehouse names
-  warehouses.forEach(warehouse => {
-    const option = document.createElement('option');
-    option.value = warehouse;
-    option.textContent = warehouse;
-    warehouseSelect.appendChild(option);
-  });
-}
-
-
-function handleTransfer(event) {
-    event.preventDefault(); // Prevent the form from submitting traditionally
-    
-    // Assuming you have the form elements accessible, you might need to adjust selectors based on actual IDs or use Svelte bindings
-    const itemName = document.getElementById('transferName').value;
-    const quantity = document.getElementById('transferQuantity').value;
-    const hargaSatuan = document.getElementById('hargaSatuan').value; // Ensure this ID is unique and corrected in your form
-    const warehouse1 = document.getElementById('warehouseSelect').value;
-    const warehouse = warehouse1.replace(/:\s*\d+$/, '');
-    if (discountType==='percent'){
-      const discountPercentage = document.getElementById('discountPercentage').value;
-      addRowToTable(itemName, hargaSatuan, quantity, warehouse,null,discountPercentage);
-    }else{
-      const discountAmount = document.getElementById('discountAmount').value;
-      addRowToTable(itemName, hargaSatuan, quantity, warehouse,discountAmount,null);
-    }
-    
-    
-  
-    // Function to add the row to the table
-
-  }
-
-// Function to add a row to the "Transferred Items" table
-function addRowToTable(itemName, hargaSatuan, quantity = 1, warehouse, discountAmount = null, discountPercentage=null) {
-  const table = document.getElementById('transferredItemsTable').getElementsByTagName('tbody')[0];
-  const newRow = table.insertRow();
-
-  // Cells for item information
-  const cell1 = newRow.insertCell(0);
-  const satuc = newRow.insertCell(1);
-  const cell2 = newRow.insertCell(2);
-  const cell4 = newRow.insertCell(3);
-  const cell5 = newRow.insertCell(4);
-  const cell6 = newRow.insertCell(5);
-  // Cell for delete button
-  const cell7 = newRow.insertCell(6);
-  const cell8 = newRow.insertCell(7);
- 
-
-  //a123
-  //hitung diskon + total harga  
-  const totalHarga = quantity * hargaSatuan;
-  let persen = discountPercentage;
-  let amount = discountAmount;
-  let finalHarga;
-  let todis;
-
-  if (persen===null && amount === null){
-    todis = 0;
-    finalHarga = totalHarga;
-  }
-  else if (persen===null){
-    todis = amount * quantity
-    finalHarga = totalHarga - todis;
-  }
-  else if (amount===null){
-    todis = totalHarga * (persen/100);
-    amount = (totalHarga * (persen/100)) * quantity;
-    finalHarga = totalHarga - todis;
-  }
-  
-
-
-
-
-  cell1.textContent = itemName;
-  satuc.textContent = hargaSatuan;
-  cell2.textContent = quantity;
-  cell4.textContent = amount;
-  cell5.textContent = todis;
-  cell6.textContent = finalHarga;
-  cell7.textContent = warehouse;
-  
-
-  // Create a delete button
-  const deleteBtn = document.createElement('button');
-  deleteBtn.textContent = '❌';
-  deleteBtn.onclick = function() {
-    // Call the deleteRow function and pass the current row to be deleted
-    deleteRow(newRow);
-  };
-  cell8.appendChild(deleteBtn);
-
-  updateTotalSum()
-}
-
-
-// Function to delete a row from the table
-function deleteRow(row) {
-  row.parentNode.removeChild(row);
-  updateTotalSum()
-}
-
-
-
-function submitNota() {
-  // Get the table's tbody element
-  const nominal = document.getElementById('nomu').value;
-  const tipe = document.getElementById('tipe').value;
-  const tableBody = document.getElementById('transferredItemsTable').getElementsByTagName('tbody')[0];
-  
-  // Check if the table has no rows
-  if (tableBody.rows.length === 0) {
-    alert("tabel tidak memiliki data!");
-    return; // Stop the function execution
-  }
-
-  const notaData = []; // Array to hold the data from each row
-  
-  for (let row of tableBody.rows) {
-    // Check for empty strings or null values in cells
-    for (let cell of row.cells) {
-      if (cell.textContent.trim() === "" || cell.textContent === null) {
-        alert("satu atau lebih baris terdapat data yang kosong!");
-        return; // Stop the function execution
-      }
-    }
-
-    // Assuming the order of cells is: Item Name, Quantity, Diskon (%), Diskon (#), Harga total, Warehouse
-    const rowData = {
-      itemName: row.cells[0].textContent,
-      satuanHarga: row.cells[1].textContent,
-      quantity: parseInt(row.cells[2].textContent),
-      discountPercentage: 0,
-      //discountPercentage: parseInt(row.cells[2].textContent.slice(0, -1)),
-      discountAmount: parseInt(row.cells[4].textContent),
-      totalPrice: row.cells[5].textContent,
-      warehouse: row.cells[6].textContent
-    };
-
-    notaData.push(rowData);
-
-    
-  }
-
-  // Proceed if there are no issues
-  console.log(nominal);
-  console.log(notaData);
-  pushApi(nominal, notaData, tipe)
-}
-
-async function pushApi(nominal, notaData, tipe) {
-  try {
-    const response = await fetch(`http://localhost:8000/items/${nominal}/${tipe}`, {
-      method: 'POST', // Specify the request method
-      headers: {
-        'Content-Type': 'application/json', // Specify the content type as JSON
-      },
-      body: JSON.stringify(notaData), // Convert the notaData object to a JSON string
-    });
-
-    if (!response.ok) {
-      // If the response is not OK, throw an error
-      throw new Error(`Error: ${response.statusText}`);
-    }
-
-    const responseData = await response.json(); // Assuming the server responds with JSON
-    console.log('Success:', responseData); // Log the success and response data
-    alert('Data successfully submitted!'); // Notify the user of success
-    window.open(responseData.response);
-  } catch (error) {
-    console.error('Error:', error); // Log any errors to the console
-    alert(`Failed to submit data: ${error.message}`); // Notify the user of the error
-  }
-}
-
-function updateTotalSum() {
-  const tableBody = document.getElementById('transferredItemsTable').getElementsByTagName('tbody')[0];
-  let totalSum = 0;
-
-  for (let row of tableBody.rows) {
-    const hargaTotalCellText = row.cells[5].textContent; // Assuming the 'Harga total' is in the fifth column
-    const hargaTotal = parseFloat(hargaTotalCellText.replace(/[^0-9.-]+/g, "")); // Remove any non-numeric characters, if any
-
-    if (!isNaN(hargaTotal)) {
-      totalSum += hargaTotal;
-    }
-  }
-
-  // Update the display
-  const totalSumDisplay = document.getElementById('totalSumDisplay');
-  totalSumDisplay.textContent = `Total Nominal: ${totalSum.toLocaleString()}`; // Format to local currency, if desired
-}
-
-
-
-</script>
-<h3>Daftar Barang</h3>
-<!-- Search input -->
-<input type="text" id = "search" placeholder="Search...">
-<button on:click={() => {
-  page = 1;
-  getSearch();
-  }}> Search</button>
-
-  <button class:show on:click={() => {hide()}}> ➖ Tutup Table</button>
-  <button class:notShow on:click={() => {hide()}}>➕ Buka Table</button>
-
-
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Stock</th>
-      <th>Harga Satuan</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody class:show>
-    {#each paginatedItems as item (item.result_id)}
-      <tr>
-        <td>{item.result_name}</td>
-        <td>{item.result_stock}</td>
-        <td>{item.result_price}</td>
-        <!-- Placeholder for future transfer functionality -->
-        <td><button on:click={() => transferData(item.result_id, item.result_name, item.result_price, item.result_kulon, item.result_toko, item.result_pink, item.result_wetan, item.result_kedungsari)}>➕</button></td>
-      </tr>
-    {/each}
-  </tbody>
-</table>
-<p>Halaman Saat ini: {page}</p>
-<p>Total Halaman: {maxPage}</p>
-<button on:click={() => {
-  page = page - 1;
-  if (page===0){
+  // Pagination actions
+  function prevPage() {
+    page = page - 1;
+    if (page < 1) {
       page = maxPage;
-      getSearch()
-  }else{
-      getSearch()
+    }
+    getSearch();
   }
 
-}}>Prev</button>
-<button on:click={() => {
-  page = page + 1;
-  if (page>maxPage){
+  function nextPage() {
+    page = page + 1;
+    if (page > maxPage) {
       page = 1;
-      getSearch()
-  }else{
-      getSearch()
+    }
+    getSearch();
   }
 
-}}>Next</button>
+  // Click on a product to populate the form
+  function selectItem(item) {
+    selectedId = item.result_id;
+    selectedName = item.result_name;
+    selectedPrice = item.result_price;
+    quantity = 1;
+    discountPercentage = 0;
+    discountAmount = 0;
+
+    // Populate warehouses
+    availableWarehouses = [
+      { name: 'kulon', stock: item.result_kulon },
+      { name: 'toko', stock: item.result_toko },
+      { name: 'pink', stock: item.result_pink },
+      { name: 'wetan', stock: item.result_wetan },
+      { name: 'kedungsari', stock: item.result_kedungsari }
+    ];
+
+    // Auto-select first warehouse with stock
+    const firstWithStock = availableWarehouses.find(w => w.stock > 0);
+    selectedWarehouse = firstWithStock ? firstWithStock.name : availableWarehouses[0].name;
+  }
+
+  // Toggle catalog table
+  function toggleTable() {
+    isTableOpen = !isTableOpen;
+  }
+
+  // Handle selected product form submission
+  function handleTransfer() {
+    if (!selectedId) {
+      alert("Silakan pilih produk dari daftar barang terlebih dahulu!");
+      return;
+    }
+
+    const totalHargaRaw = quantity * selectedPrice;
+    let unitDiscount = 0;
+    let totalDiscount = 0;
+    let finalHarga = 0;
+
+    if (discountType === 'percent') {
+      unitDiscount = selectedPrice * (discountPercentage / 100);
+      totalDiscount = totalHargaRaw * (discountPercentage / 100);
+      finalHarga = totalHargaRaw - totalDiscount;
+    } else {
+      unitDiscount = discountAmount;
+      totalDiscount = discountAmount * quantity;
+      finalHarga = totalHargaRaw - totalDiscount;
+    }
+
+    // Add to cart
+    orderCart = [...orderCart, {
+      itemName: selectedName,
+      satuanHarga: selectedPrice,
+      quantity: quantity,
+      discountPercentage: discountType === 'percent' ? discountPercentage : 0,
+      discountAmount: unitDiscount, // discount per unit
+      totalDiscount: totalDiscount, // total discount for row
+      totalPrice: finalHarga,
+      warehouse: selectedWarehouse
+    }];
+
+    // Reset selected product form
+    selectedId = '';
+    selectedName = '';
+    selectedPrice = 0;
+    quantity = 1;
+    discountPercentage = 0;
+    discountAmount = 0;
+    availableWarehouses = [];
+    selectedWarehouse = '';
+  }
+
+  // Delete item from cart
+  function deleteRow(index) {
+    orderCart = orderCart.filter((_, i) => i !== index);
+  }
+
+  // Reactive total sum
+  $: totalSum = orderCart.reduce((sum, item) => sum + item.totalPrice, 0);
+
+  // Submit the transaction (cetak nota)
+  async function submitNota() {
+    if (orderCart.length === 0) {
+      alert("Tabel order cart tidak memiliki data!");
+      return;
+    }
+
+    const notaData = orderCart.map(item => ({
+      itemName: item.itemName,
+      satuanHarga: item.satuanHarga,
+      quantity: item.quantity,
+      discountPercentage: item.discountPercentage,
+      discountAmount: item.totalDiscount, // total discount for backend
+      totalPrice: item.totalPrice,
+      warehouse: item.warehouse
+    }));
+
+    try {
+      const response = await fetch(`http://localhost:8000/items/${nominalUang}/${tipePembeli}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(notaData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('Success:', responseData);
+      alert('Data successfully submitted!');
+      window.open(responseData.response);
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      alert(`Failed to submit data: ${error.message}`);
+    }
+  }
+</script>
+
+<h3>Daftar Barang</h3>
+
+<div class="search-section">
+  <input type="text" placeholder="Search..." bind:value={searchQuery}>
+  <button on:click={() => { page = 1; getSearch(); }}>Search</button>
+  <button on:click={toggleTable}>
+    {#if isTableOpen}
+      ➖ Tutup Table
+    {:else}
+      ➕ Buka Table
+    {/if}
+  </button>
+</div>
+
+{#if isTableOpen}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Stock</th>
+        <th>Harga Satuan</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {#each items as item (item.result_id)}
+        <tr>
+          <td>{item.result_name}</td>
+          <td>{item.result_stock}</td>
+          <td>{item.result_price}</td>
+          <td><button on:click={() => selectItem(item)}>➕</button></td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    <button on:click={prevPage}>Prev</button>
+    <span>Halaman Saat ini: {page} / {maxPage}</span>
+    <button on:click={nextPage}>Next</button>
+  </div>
+{/if}
 
 <h3>Selected Item</h3>
-<form id="transferForm" class="form-container" on:submit|preventDefault={handleTransfer}>
+<form class="form-container" on:submit|preventDefault={handleTransfer}>
   <div>
     <label for="transferId">Item ID:</label>
-    <input id="transferId" type="text" name="itemId" readonly />
+    <input id="transferId" type="text" value={selectedId} readonly />
   </div>
   <div>
     <label for="transferName">Item Name:</label>
-    <input id="transferName" type="text" name="itemName" readonly />
+    <input id="transferName" type="text" value={selectedName} readonly />
   </div>
   <div>
     <label for="hargaSatuan">Harga Satuan:</label>
-    <input id="hargaSatuan" type="text" name="itemSatuan" readonly />
+    <input id="hargaSatuan" type="text" value={selectedPrice} readonly />
   </div>
   
   <div>
     <label for="transferQuantity">Jumlah:</label>
-    <input id="transferQuantity" type="number" name="quantity" min="1" required/>
+    <input id="transferQuantity" type="number" bind:value={quantity} min="1" required/>
   </div>
   <div>
     <label>
-      <input id="disper" type="radio" name="discountType" bind:group={discountType} value="percent" />
+      <input type="radio" bind:group={discountType} value="percent" />
       Discount %
     </label>
     <label>
-      <input id="dismon" type="radio" name="discountType" bind:group={discountType} value="amount" />
+      <input type="radio" bind:group={discountType} value="amount" />
       Discount #
     </label>
   </div>
-  {#if discountType === 'percent'}
-  <div>
-    <label for="discountPercentage">Discount Percentage:</label>
-    <input id="discountPercentage" type="number" name="discountPercentage"step=any min="0" max="100" value="0" />
-  </div>
-{/if}
-
-<!-- Discount Amount Input -->
-{#if discountType === 'amount'}
-  <div>
-    <label for="discountAmount">Discount Amount:</label>
-    <input id="discountAmount" type="number" name="discountAmount" min="0" value="0" />
-  </div>
-{/if}
   
-<div>
-  <label for="warehouseSelect">Warehouse:</label>
-  <select id="warehouseSelect"></select>
-</div>
+  {#if discountType === 'percent'}
+    <div>
+      <label for="discountPercentage">Discount Percentage:</label>
+      <input id="discountPercentage" type="number" bind:value={discountPercentage} step="any" min="0" max="100" />
+    </div>
+  {/if}
+
+  {#if discountType === 'amount'}
+    <div>
+      <label for="discountAmount">Discount Amount:</label>
+      <input id="discountAmount" type="number" bind:value={discountAmount} min="0" />
+    </div>
+  {/if}
+  
+  <div>
+    <label for="warehouseSelect">Warehouse:</label>
+    <select id="warehouseSelect" bind:value={selectedWarehouse}>
+      {#each availableWarehouses as wh}
+        <option value={wh.name}>{wh.name}: {wh.stock}</option>
+      {/each}
+    </select>
+  </div>
   
   <button type="submit">Enter</button>
 </form>
@@ -390,63 +302,101 @@ function updateTotalSum() {
     </tr>
   </thead>
   <tbody>
-    <!-- Transferred items will be added here -->
+    {#each orderCart as item, i}
+      <tr>
+        <td>{item.itemName}</td>
+        <td>{item.satuanHarga.toLocaleString('id-ID')}</td>
+        <td>{item.quantity}</td>
+        <td>{item.discountAmount.toLocaleString('id-ID')}</td>
+        <td>{item.totalDiscount.toLocaleString('id-ID')}</td>
+        <td>{item.totalPrice.toLocaleString('id-ID')}</td>
+        <td>{item.warehouse}</td>
+        <td><button type="button" on:click={() => deleteRow(i)}>❌</button></td>
+      </tr>
+    {/each}
   </tbody>
-
 </table>
-<p id="totalSumDisplay">Total Nominal: 0</p>
-<label>
-  Tipe pembeli
-  <input id="tipe" name="tipe"  value="Umum" />
-  
-</label>
-<label>
-  Nominal Uang
-  <input id="nomu" type="number" name="nomu"  value="0" />
-  
-</label>
-<button  on:click={() => submitNota()}>Cetak Nota</button>
 
+<p id="totalSumDisplay">Total Nominal: {totalSum.toLocaleString('id-ID')}</p>
 
+<div class="submission-form">
+  <label>
+    Tipe pembeli
+    <input bind:value={tipePembeli} />
+  </label>
+  <label>
+    Nominal Uang
+    <input type="number" bind:value={nominalUang} min="0" />
+  </label>
+  <button on:click={submitNota}>Cetak Nota</button>
+</div>
 
 <style>
-  .show{
-        display: none;
-    }
-    .notShow{
-        display: none;
-    }
-  ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-  li {
-    float: left;
-  }
-  li a {
-    display: block;
-    color: black;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
-  }
-
-  .form-row {
+  .search-section {
+    margin-bottom: 15px;
     display: flex;
-    align-items: center; /* Align items vertically in the center */
-    justify-content: space-between; /* Distribute space between items */
-    margin-bottom: 10px; /* Add some space between rows */
+    gap: 10px;
+    align-items: center;
   }
-
-  .form-row label {
-    margin-right: 10px; /* Add some space between label and input */
+  .pagination {
+    margin-top: 10px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
   }
-
   .form-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px; /* Add gap between form groups */
+    gap: 20px;
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .form-container div {
+    display: flex;
+    flex-direction: column;
+  }
+  .form-container label {
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  .submission-form {
+    margin-top: 20px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+  }
+  .submission-form label {
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+  }
+  input, select, button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  button {
+    background-color: #036ac4;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #025299;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  th {
+    background-color: #f2f2f2;
   }
 </style>

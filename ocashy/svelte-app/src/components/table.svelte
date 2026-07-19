@@ -5,8 +5,7 @@
     let filteredItems = [];
     let page = 1;
     let maxPage;
-
-
+    let searchQuery = '';
 
     async function getItems() {
         const response = await fetch(`http://localhost:8000/search?page=${page}&limit=17`);
@@ -16,15 +15,12 @@
         maxPage = data.TotalPages
     }
 
-
     async function getSearch(){
-        const search = document.getElementById('search').value;
-        const response = await fetch(`http://localhost:8000/search?name=${search}&page=${page}&limit=17`);
+        const response = await fetch(`http://localhost:8000/search?name=${searchQuery}&page=${page}&limit=17`);
         const data = await response.json();
         items = data.Items;
         filteredItems = items;
         maxPage = data.TotalPages
-
     }
 
     onMount(getItems)
@@ -32,7 +28,7 @@
 </script>
 <h1>Daftar Produk</h1>
 
-<input type="text" id = "search" placeholder="Search..."/>
+<input type="text" placeholder="Search..." bind:value={searchQuery}/>
 <button on:click={() => {
     page = 1;
     getSearch();
