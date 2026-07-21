@@ -22,9 +22,12 @@
   let orderCart = [];
   let tipePembeli = 'Umum';
   let nominalUang = 0;
+  let silentPrintEnabled = true;
+  let loading = false;
 
   // Fetch initial items
   async function getItems() {
+    loading = true;
     try {
       const response = await fetch(`http://localhost:8000/search?page=${page}&limit=8`);
       const data = await response.json();
@@ -32,11 +35,14 @@
       maxPage = data.TotalPages || 1;
     } catch (e) {
       console.error("Failed to fetch items:", e);
+    } finally {
+      loading = false;
     }
   }
 
   // Fetch search results
   async function getSearch() {
+    loading = true;
     try {
       const response = await fetch(`http://localhost:8000/search?name=${searchQuery}&page=${page}&limit=8`);
       const data = await response.json();
@@ -44,10 +50,18 @@
       maxPage = data.TotalPages || 1;
     } catch (e) {
       console.error("Failed to search items:", e);
+    } finally {
+      loading = false;
     }
   }
 
-  onMount(getItems);
+  onMount(() => {
+    getItems();
+    const storedSilent = localStorage.getItem('silentPrintEnabled');
+    if (storedSilent !== null) {
+      silentPrintEnabled = storedSilent === 'true';
+    }
+  });
 
   // Pagination actions
   function prevPage() {
@@ -186,6 +200,61 @@
       alert(`Failed to submit data: ${error.message}`);
     }
   }
+
+  // Submit the transaction and print directly via SumatraPDF
+  async function submitNotaLangsung() {
+    if (orderCart.length === 0) {
+      alert("Tabel order cart tidak memiliki data!");
+      return;
+    }
+
+    const notaData = orderCart.map(item => ({
+      itemName: item.itemName,
+      satuanHarga: item.satuanHarga,
+      quantity: item.quantity,
+      discountPercentage: item.discountPercentage,
+      discountAmount: item.totalDiscount,
+      totalPrice: item.totalPrice,
+      warehouse: item.warehouse
+    }));
+
+    try {
+      // 1. Generate the PDF
+      const response = await fetch(`http://localhost:8000/items/${nominalUang}/${tipePembeli}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(notaData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error generating PDF: ${response.statusText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('PDF Generated:', responseData);
+
+      // Extract filename from response URL
+      const pdfUrl = responseData.response;
+      const filename = pdfUrl.substring(pdfUrl.lastIndexOf('/') + 1);
+
+      // 2. Call the print API
+      const printResponse = await fetch(`http://localhost:8000/print-pdf?filename=${encodeURIComponent(filename)}`, {
+        method: 'POST',
+      });
+
+      if (!printResponse.ok) {
+        const errorData = await printResponse.json();
+        throw new Error(errorData.detail || `Printing error: ${printResponse.statusText}`);
+      }
+
+      alert('Nota successfully printed!');
+    } catch (error) {
+      console.error('Error printing order:', error);
+      alert(`Failed to print: ${error.message}`);
+    }
+  }
 </script>
 
 <h3>Daftar Barang</h3>
@@ -203,32 +272,39 @@
 </div>
 
 {#if isTableOpen}
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Stock</th>
-        <th>Harga Satuan</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each items as item (item.result_id)}
+  {#if loading}
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading items...</p>
+    </div>
+  {:else}
+    <table>
+      <thead>
         <tr>
-          <td>{item.result_name}</td>
-          <td>{item.result_stock}</td>
-          <td>{item.result_price}</td>
-          <td><button on:click={() => selectItem(item)}>➕</button></td>
+          <th>Name</th>
+          <th>Stock</th>
+          <th>Harga Satuan</th>
+          <th>Action</th>
         </tr>
-      {/each}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each items as item (item.result_id)}
+          <tr>
+            <td>{item.result_name}</td>
+            <td>{item.result_stock}</td>
+            <td>{item.result_price}</td>
+            <td><button on:click={() => selectItem(item)}>➕</button></td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
 
-  <div class="pagination">
-    <button on:click={prevPage}>Prev</button>
-    <span>Halaman Saat ini: {page} / {maxPage}</span>
-    <button on:click={nextPage}>Next</button>
-  </div>
+    <div class="pagination">
+      <button on:click={prevPage}>Prev</button>
+      <span>Halaman Saat ini: {page} / {maxPage}</span>
+      <button on:click={nextPage}>Next</button>
+    </div>
+  {/if}
 {/if}
 
 <h3>Selected Item</h3>
@@ -329,6 +405,9 @@
     <input type="number" bind:value={nominalUang} min="0" />
   </label>
   <button on:click={submitNota}>Cetak Nota</button>
+  {#if silentPrintEnabled}
+    <button class="btn-print-direct" on:click={submitNotaLangsung}>Cetak Nota Langsung</button>
+  {/if}
 </div>
 
 <style>
@@ -386,6 +465,12 @@
   button:hover {
     background-color: #025299;
   }
+  button.btn-print-direct {
+    background-color: #28a745;
+  }
+  button.btn-print-direct:hover {
+    background-color: #218838;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -397,6 +482,28 @@
     text-align: left;
   }
   th {
-    background-color: #f2f2f2;
+    background-color: #036ac4;
+    color: white;
+    font-weight: 600;
+  }
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+  .spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #036ac4;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 </style>

@@ -1,0 +1,11 @@
+{
+  "name": "ocashy-neu",
+  "version": "1.0.0",
+  "description": "Neutralinojs app for Ocashy",
+  "scripts": {
+    "sync": "node sync.js",
+    "build:frontend": "npm run build --prefix ../svelte-app",
+    "build": "npm run build:frontend && npm run sync && npx neu build",
+    "run": "npm run build:frontend && npm run sync && npx neu run"
+  }
+}

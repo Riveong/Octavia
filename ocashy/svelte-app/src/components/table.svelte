@@ -7,23 +7,39 @@
     let maxPage;
     let searchQuery = '';
 
+    let loading = false;
+
     async function getItems() {
-        const response = await fetch(`http://localhost:8000/search?page=${page}&limit=17`);
-        const data = await response.json();
-        items = data.Items;
-        filteredItems = items;
-        maxPage = data.TotalPages
+        loading = true;
+        try {
+            const response = await fetch(`http://localhost:8000/search?page=${page}&limit=17`);
+            const data = await response.json();
+            items = data.Items || [];
+            filteredItems = items;
+            maxPage = data.TotalPages || 1;
+        } catch (e) {
+            console.error(e);
+        } finally {
+            loading = false;
+        }
     }
 
     async function getSearch(){
-        const response = await fetch(`http://localhost:8000/search?name=${searchQuery}&page=${page}&limit=17`);
-        const data = await response.json();
-        items = data.Items;
-        filteredItems = items;
-        maxPage = data.TotalPages
+        loading = true;
+        try {
+            const response = await fetch(`http://localhost:8000/search?name=${searchQuery}&page=${page}&limit=17`);
+            const data = await response.json();
+            items = data.Items || [];
+            filteredItems = items;
+            maxPage = data.TotalPages || 1;
+        } catch (e) {
+            console.error(e);
+        } finally {
+            loading = false;
+        }
     }
 
-    onMount(getItems)
+    onMount(getItems);
 
 </script>
 <h1>Daftar Produk</h1>
@@ -33,6 +49,12 @@
     page = 1;
     getSearch();
     }}> Search</button>
+{#if loading}
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading products...</p>
+    </div>
+{:else}
 <table>
     <thead>
         <tr>
@@ -67,6 +89,7 @@
         {/each}
     </tbody>
 </table>
+{/if}
 <button on:click={() => {
     page = page - 1;
     if (page===0){
@@ -96,5 +119,25 @@
         padding: 10px;
         margin-bottom: 20px;
         box-sizing: border-box;
+    }
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #036ac4;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 10px;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 </style>

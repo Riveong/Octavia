@@ -1,11 +1,15 @@
 @echo off
 title Octavia Ocashy Tools
 
-cd /d "%~dp0ocashy\backend\api"
-start uvicorn main:app --reload
+netstat -o -n -a | findstr :8000 >nul
+if %errorlevel% equ 0 (
+    echo FastAPI is already running on port 8000.
+) else (
+    echo Starting FastAPI backend...
+    cd /d "%~dp0ocashy\backend\api"
+    start uvicorn main:app --reload
+)
 
-cd /d "%~dp0ocashy\svelte-app"
-start npm run dev
-
-timeout /t 10 /nobreak >nul
-start msedge http://localhost:8080
+echo Starting Neutralino app...
+cd /d "%~dp0ocashy\neu"
+npm run run

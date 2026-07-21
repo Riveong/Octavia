@@ -6,6 +6,7 @@
     import Help from '../components/help.svelte';
     import Edit from '../components/edit.svelte';
     import Add from '../components/add.svelte';
+    import Settings from '../components/settings.svelte';
 
 
     let currentRoute = '';
@@ -34,6 +35,8 @@
     <Cashier />
 {:else if currentRoute === '#edit'}
     <Edit />
+{:else if currentRoute === '#settings'}
+    <Settings />
 {:else if currentRoute === '#help'}
     <Help />
 {:else}

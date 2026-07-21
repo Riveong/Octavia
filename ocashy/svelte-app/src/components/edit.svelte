@@ -9,20 +9,36 @@
     let editingItemId = null; // ID of the item currently being edited
     let editingItem = {}; // Object to hold the editing item's data for binding to form inputs
 
+    let loading = false;
+
     async function getItems() {
-        const response = await fetch(`http://localhost:8000/search?page=${page}&limit=17`);
-        const data = await response.json();
-        items = data.Items;
-        maxPage = data.TotalPages;
-        filteredItems = items;
+        loading = true;
+        try {
+            const response = await fetch(`http://localhost:8000/search?page=${page}&limit=17`);
+            const data = await response.json();
+            items = data.Items || [];
+            maxPage = data.TotalPages || 1;
+            filteredItems = items;
+        } catch (e) {
+            console.error(e);
+        } finally {
+            loading = false;
+        }
     }
 
     async function getSearch(){
-        const response = await fetch(`http://localhost:8000/search?name=${searchQuery}&page=${page}&limit=17`);
-        const data = await response.json();
-        items = data.Items;
-        filteredItems = items;
-        maxPage = data.TotalPages
+        loading = true;
+        try {
+            const response = await fetch(`http://localhost:8000/search?name=${searchQuery}&page=${page}&limit=17`);
+            const data = await response.json();
+            items = data.Items || [];
+            filteredItems = items;
+            maxPage = data.TotalPages || 1;
+        } catch (e) {
+            console.error(e);
+        } finally {
+            loading = false;
+        }
     }
 
     function startEditing(item) {
@@ -95,6 +111,12 @@
     }}> Search</button>
 
 
+{#if loading}
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading products...</p>
+    </div>
+{:else}
 <div class = "scrollable-body">
 <table class = "edit">
     <thead class="sticky-header">
@@ -152,6 +174,7 @@
     </tbody>
 </table>
 </div>
+{/if}
 <button on:click={() => {
     page = page - 1;
     if (page===0){
@@ -208,6 +231,26 @@
     }
     .edit {
         overflow: auto;
+    }
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+    }
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #036ac4;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 10px;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 </style>
 
